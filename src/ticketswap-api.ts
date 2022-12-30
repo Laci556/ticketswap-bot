@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import ora from 'ora';
 import { join } from 'path';
-import { getScrapingBeeTokens, post } from './utils';
+import { getScrapingBeeTokens, post, retryRequest } from './utils';
 
 const SEARCH_EVENTS_QUERY = `
 query getSearchResults($query: String!, $first: Int!, $after: String, $type: SearchType) {
@@ -143,13 +143,27 @@ export const watchTickets = async (
   let i = 0;
   const tokens = await getScrapingBeeTokens(join(__dirname, '../tokens.yml'));
   while (!ticketsToBuy.length) {
-    const { data } = await post<TEventTypeQuery>(
-      {
-        operationName: 'getEventStructuredData',
-        query: EVENT_TYPES_QUERY,
-        variables: { id },
-      },
-      { proxyToken: tokens[Math.floor(Math.random() * tokens.length)] }
+    const { data } = await retryRequest(
+      (retryCount = 0) =>
+        post<TEventTypeQuery>(
+          {
+            operationName: 'getEventStructuredData',
+            query: EVENT_TYPES_QUERY,
+            variables: { id },
+          },
+          {
+            proxyToken: tokens[Math.floor(Math.random() * tokens.length)],
+            proxyType:
+              retryCount < 2
+                ? undefined
+                : retryCount < 4
+                ? 'premium_proxy'
+                : 'stealth_proxy',
+          }
+        ),
+      () => {
+        i++;
+      }
     );
     spinner.text = `Searching for tickets (${++i} tries)`;
     ticketsToBuy = data.data.node.types.edges

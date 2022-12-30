@@ -23,6 +23,8 @@ tokens:
 
 > You can get a free ScrapingBee token [here](https://app.scrapingbee.com/). The free plan allows 1000 requests which should be enough for an hour or so or searching. You can provide multiple tokens to the bot to rotate through them. Again, this is against TOS, so use at your own risk. The bot will work without a ScrapingBee token, but the rate limit will be hit pretty quickly. You can alternatively use a VPN and change the region manually once the rate limit is hit.
 
+If the API returns an error, the bot will retry the request with a different ScrapingBee token after a delay. If multiple retries fail, it will try a different proxy method (`premium` then `stealth`).
+
 ## Usage
 
 You need `node` installed (and `yarn` is recommended)
